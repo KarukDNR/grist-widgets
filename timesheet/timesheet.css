@@ -4,7 +4,7 @@ body { margin: 0; background: #e9edf0; color: #111; }
 button { padding: 8px 12px; cursor: pointer; }
 button:disabled { cursor: default; }
 #status { flex: 1; }
-#report { width: 7in; padding: 0; margin: 24px auto; background: #fff; font: 10pt 'Times New Roman', serif; --rule-width: 0.5pt; }
+#report { width: 7in; padding: 0; margin: 24px auto; background: #fff; font: 10pt 'Times New Roman', serif; --rule-width: 0.25pt; }
 .banner { height: 0.85in; display: flex; justify-content: center; align-items: center; margin-bottom: 14px; }
 .banner img { width: 4in; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
 .banner h1 { font-size: 10pt; margin: 0; }
@@ -16,9 +16,9 @@ button:disabled { cursor: default; }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 col.fund { width: 23%; } col.type { width: 10%; } col.day { width: 4.25%; } col.subtotal { width: 7.5%; }
 th, td { border: var(--rule-width) solid #111; padding: 2px; overflow-wrap: anywhere; }
-thead th { padding: 2px 1px; text-align: center; height: 21px; white-space: nowrap; }
-.date-month { display: block; height: 12pt; line-height: 12pt; }
-.date-cell { line-height: 12pt; }
+thead th { padding: 2px 1px; text-align: center; height: 21px; white-space: nowrap; font-size: 9pt; }
+.date-month { display: block; height: 10pt; line-height: 10pt; }
+.date-cell { line-height: 10pt; font-weight: normal; }
 thead .heading-label { text-align: right; border: none; }
 .weekend { background: #c4c4c4; } .holiday { background: #fff000; }
 .week-start { border-left: var(--rule-width) solid #111; }
@@ -43,7 +43,7 @@ thead .heading-label { text-align: right; border: none; }
 .deadline { text-align: center; margin: 16px 0 0; }
 .deadline strong { color: #d00000; text-decoration: underline; text-decoration-thickness: var(--rule-width); }
 .demo-note { text-align: center; font: bold 10pt system-ui, sans-serif; padding: 6px; border: var(--rule-width) solid #111; }
-@page { size: letter portrait; margin: 0.75in; }
+@page { size: letter portrait; margin: 0.5in 0.75in; }
 @media screen { #report { box-shadow: 0 3px 16px #0002; padding: 22px; width: calc(7in + 44px); } }
 @media print {
   body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
