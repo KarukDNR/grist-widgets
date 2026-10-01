@@ -2,7 +2,7 @@
 window.TIMESHEET_CONFIG = {
   tables: {
     hours: 'Hours_paid',
-    totals: 'Hours_paid_summary_Who_and_pay_period',
+    totals: 'Hours_paid_summary_Timesheets',
     staff: 'Staff',
     funds: 'Funds',
     periods: 'Pay_periods',
