@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timesheet</title>
+  <link rel="stylesheet" href="timesheet.css">
+  <script src="https://docs.getgrist.com/grist-plugin-api.js" defer></script>
+  <script src="config.js" defer></script>
+  <script src="timesheet.js" defer></script>
+</head>
+<body>
+  <nav class="toolbar" aria-label="Timesheet actions">
+    <button id="print" disabled>Print / Save PDF</button>
+    <button id="refresh">Refresh</button>
+    <span id="status" role="status">Select an employee and pay period in Grist.</span>
+  </nav>
+  <main id="report" aria-label="Printable timesheet" hidden></main>
+</body>
+</html>
