@@ -31,15 +31,18 @@
   function requireColumns(table, columns, name) {
     for (const column of columns) if (!(column in table)) throw new Error(`${name} is missing column ${column}. Check config.js and the Grist table.`);
   }
-  function totalsFor(table, paid, who, period) {
+  function totalsFor(table, paid, timesheetId, who, period) {
     const all = rows(table);
     const paidIds = new Set(paid.map(row => row.id));
     const matches = all.filter(row => {
-      if ('Who' in row && 'Pay_period_end' in row) return ref(row.Who) === who && ref(row.Pay_period_end) === period;
-      const group = ids(row.group);
-      return group.length === paidIds.size && group.length > 0 && group.every(id => paidIds.has(id));
+      if (cfg.timesheetColumn in row) return ref(row[cfg.timesheetColumn]) === timesheetId;
+      if ('group' in row) {
+        const group = ids(row.group);
+        return group.length === paidIds.size && group.length > 0 && group.every(id => paidIds.has(id));
+      }
+      return 'Who' in row && 'Pay_period_end' in row && ref(row.Who) === who && ref(row.Pay_period_end) === period;
     });
-    if (matches.length !== 1) throw new Error('Could not identify one paid-hours summary for this employee/period. Include group in the summary, or group by Who and Pay_period_end.');
+    if (matches.length !== 1) throw new Error('Could not identify one paid-hours summary for this timesheet. Group by the timesheet reference or include group, and check tables.totals in config.js.');
     return matches[0];
   }
   function render(model) {
@@ -92,19 +95,19 @@
   async function refresh() {
     const version = ++generation;
     clear('Loading timesheet…');
-    if (!selected || !ref(selected.Who) || !ref(selected.Pay_period_end)) { clear('Select one employee/pay-period row from Hours [by Who, Pay_period_end].'); return; }
+    if (!selected || !selected.id || !ref(selected.Who) || !ref(selected.Pay_period_end)) { clear('Select a Timesheets row with an employee and pay period.'); return; }
     if (!ready) { clear('Grant Full document access in the custom widget settings, then click Refresh.'); return; }
-    const who = ref(selected.Who), periodId = ref(selected.Pay_period_end);
+    const timesheetId = selected.id, who = ref(selected.Who), periodId = ref(selected.Pay_period_end);
     try {
       const keys = ['hours','totals','staff','funds','periods'];
       if (cfg.tables.holidays) keys.push('holidays');
       const fetched = await Promise.all(keys.map(key => grist.docApi.fetchTable(cfg.tables[key])));
       if (version !== generation) return;
       const tables = Object.fromEntries(keys.map((key,i) => [key, fetched[i]]));
-      requireColumns(tables.hours, ['Who','Pay_period_end','Fund','Hours_type','Total_hours',...days], cfg.tables.hours);
+      requireColumns(tables.hours, [cfg.timesheetColumn,'Fund','Hours_type','Total_hours',...days], cfg.tables.hours);
       requireColumns(tables.totals, ['Total',...days], cfg.tables.totals);
-      const paid = rows(tables.hours).filter(r => ref(r.Who) === who && ref(r.Pay_period_end) === periodId);
-      if (!paid.length) throw new Error('No paid-hour rows exist for this employee/pay period.');
+      const paid = rows(tables.hours).filter(r => ref(r[cfg.timesheetColumn]) === timesheetId);
+      if (!paid.length) throw new Error('No paid-hour rows exist for the selected timesheet.');
       const staff = rows(tables.staff).find(r => r.id === who);
       const period = rows(tables.periods).find(r => r.id === periodId);
       if (!staff || !period) throw new Error('Employee or pay period is missing or inaccessible.');
@@ -113,7 +116,7 @@
         requireColumns(tables.holidays, ['Date'], cfg.tables.holidays);
         rows(tables.holidays).forEach(row => { const d = date(row.Date); if (d) holidays.add(iso(d)); });
       }
-      render({staff,period,paid,funds:rows(tables.funds),totals:totalsFor(tables.totals,paid,who,periodId),holidays});
+      render({staff,period,paid,funds:rows(tables.funds),totals:totalsFor(tables.totals,paid,timesheetId,who,periodId),holidays});
     } catch (error) { if (version === generation) clear(error.message); }
   }
   printButton.addEventListener('click', async () => {
