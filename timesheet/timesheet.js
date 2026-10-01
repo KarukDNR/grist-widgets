@@ -51,12 +51,12 @@
     if (end.getUTCDay() !== 6 || (start && iso(start) !== iso(expected))) throw new Error('This form requires a 14-day Sunday–Saturday pay period. Check Start_date and End_date.');
     const dates = days.map((_, i) => new Date(expected.getTime() + i * 86400000));
     const classes = dates.map((d, i) => `${holidays.has(iso(d)) ? 'holiday' : [0,6].includes(d.getUTCDay()) ? 'weekend' : ''} ${i === 0 || i === 7 ? 'week-start' : ''}`);
-    const header = (withDates = true) => `<thead><tr><th class="heading-label" colspan="2">Day:</th>${labels.map((label,i) => `<th class="${classes[i]}" scope="col">${label}</th>`).join('')}<th ${withDates ? 'rowspan="2"' : ''}>SUB-<br>TOTAL</th></tr>${withDates ? `<tr><th class="heading-label" colspan="2">Date:</th>${dates.map((d,i) => `<th class="${classes[i]}">${i === 0 || d.getUTCDate() === 1 ? `${d.getUTCMonth()+1}/` : ''}${d.getUTCDate()}</th>`).join('')}</tr>` : ''}</thead>`;
+    const header = (withDates = true) => `<thead><tr><th class="heading-label" colspan="2">Day:</th>${labels.map((label,i) => `<th class="${classes[i]}" scope="col">${label}</th>`).join('')}<th ${withDates ? 'rowspan="2"' : ''}>${withDates ? 'Sub-<br>total' : 'Total'}</th></tr>${withDates ? `<tr><th class="heading-label" colspan="2">Date:</th>${dates.map((d,i) => `<th class="date-cell ${classes[i]}"><span class="date-month">${i === 0 || d.getUTCDate() === 1 ? `${d.getUTCMonth()+1}/` : ''}</span>${d.getUTCDate()}</th>`).join('')}</tr>` : ''}</thead>`;
     const columns = `<colgroup><col class="fund"><col class="type">${days.map(() => '<col class="day">').join('')}<col class="subtotal"></colgroup>`;
     const line = row => {
       const fund = row ? funds.find(f => f.id === ref(row.Fund)) : null;
       if (row && !fund) throw new Error(`Fund record ${ref(row.Fund)} is missing or inaccessible.`);
-      return `<tr class="line"><td class="fund-label">${row ? esc(fund.Name) + '<br>' + esc(fund.Code) : ''}</td><td class="hours-type">${row ? esc(row.Hours_type) : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : '0'}</td></tr>`;
+      return `<tr class="line${row ? '' : ' empty'}"><td class="fund-label">${row ? esc(fund.Name) + '<br><span class="fund-code">' + esc(fund.Code) + '</span>' : ''}</td><td class="hours-type">${row ? esc(row.Hours_type) : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : '0'}</td></tr>`;
     };
     const pad = Math.max(0, cfg.minimumRows - paid.length);
     // Validate all totals before exposing a printable report. Never calculate payroll here.
