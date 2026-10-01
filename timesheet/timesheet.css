@@ -14,11 +14,10 @@ button:disabled { cursor: default; }
 .metadata .name { grid-column: 2; }
 .metadata .name-space { grid-column: 3 / 5; }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-col.fund { width: 23%; } col.type { width: 10%; } col.day { width: 4.25%; } col.subtotal { width: 7.5%; }
+col.fund { width: 23%; } col.type { width: 8.5%; } col.day { width: calc(62% / 14); } col.subtotal { width: 6.5%; }
 th, td { border: var(--rule-width) solid #111; padding: 2px; overflow-wrap: anywhere; }
 thead th { padding: 2px 1px; text-align: center; height: 21px; white-space: nowrap; font-size: 9pt; }
-.date-month { display: block; height: 10pt; line-height: 10pt; }
-.date-cell { line-height: 10pt; font-weight: normal; }
+.date-cell { font-size: 8pt; line-height: 10pt; font-weight: normal; }
 thead .heading-label { text-align: right; border: none; }
 .weekend { background: #c4c4c4; } .holiday { background: #fff000; }
 .week-start { border-left: var(--rule-width) solid #111; }
@@ -29,7 +28,7 @@ thead .heading-label { text-align: right; border: none; }
 .number { white-space: nowrap; text-align: right; vertical-align: bottom; font-weight: bold; font-variant-numeric: tabular-nums; }
 .total-line { display: flex; justify-content: flex-end; align-items: center; font-weight: bold; font-size: 10pt; }
 .total-line span { padding: 8px 3px; }
-.total-line strong { width: 7.5%; border: var(--rule-width) solid #111; padding: 8px 3px; text-align: right; font-size: 10pt; }
+.total-line strong { width: 6.5%; border: var(--rule-width) solid #111; padding: 8px 3px; text-align: right; font-size: 10pt; }
 .match-note { text-align: right; font-weight: bold; font-style: italic; margin: 3px 0 4px; }
 .daily-label { text-align: right; font-weight: bold; }
 .daily td { height: 28px; }
