@@ -6,7 +6,7 @@ window.TIMESHEET_CONFIG = {
     staff: 'Staff',
     funds: 'Funds',
     periods: 'Pay_periods',
-    holidays: null // Set to 'Holidays' when a table with a Date column exists.
+    holidays: 'Holidays' // Date column supplies the observed holiday dates.
   },
   program: 'DNR', // Staff.Program takes precedence if added.
   payDateColumn: 'Pay_date', // Optional Date column on Pay_periods; blank until added.
