@@ -131,7 +131,7 @@
   if (demo) { renderDemo(); return; }
   if (!window.grist) { clear('Grist API could not load. Open this URL in a Grist custom widget, or use ?demo=1 for a standalone preview.'); return; }
   grist.onOptions((options, interaction) => { ready = interaction?.accessLevel === 'full'; refresh(); });
-  grist.onRecord(record => { selected = record; refresh(); }, {keepEncoded:true});
-  grist.onRecords(() => refresh(), {keepEncoded:true});
+  grist.onRecord(record => { selected = record; refresh(); }, {keepEncoded:true, expandRefs:false});
+  grist.onRecords(() => refresh(), {keepEncoded:true, expandRefs:false});
   grist.ready({requiredAccess:'full'});
 })();
