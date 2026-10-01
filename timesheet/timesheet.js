@@ -56,7 +56,7 @@
     const line = row => {
       const fund = row ? funds.find(f => f.id === ref(row.Fund)) : null;
       if (row && !fund) throw new Error(`Fund record ${ref(row.Fund)} is missing or inaccessible.`);
-      return `<tr class="line${row ? '' : ' empty'}"><td class="fund-label">${row ? esc(fund.Name) + '<br><span class="fund-code">' + esc(fund.Code) + '</span>' : ''}</td><td class="hours-type">${row ? esc(row.Hours_type) : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : '0'}</td></tr>`;
+      return `<tr class="line"><td class="fund-label">${row ? esc(fund.Name) + '<br><span class="fund-code">' + esc(fund.Code) + '</span>' : ''}</td><td class="hours-type">${row ? esc(row.Hours_type) : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : '0'}</td></tr>`;
     };
     const pad = Math.max(0, cfg.minimumRows - paid.length);
     // Validate all totals before exposing a printable report. Never calculate payroll here.

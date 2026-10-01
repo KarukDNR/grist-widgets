@@ -23,8 +23,7 @@ thead .heading-label { text-align: right; border: none; }
 .weekend { background: #c4c4c4; } .holiday { background: #fff000; }
 .week-start { border-left: var(--rule-width) solid #111; }
 .line td { height: 28pt; }
-.line.empty td { height: 20pt; }
-.fund-code { font-size: 11pt; }
+.fund-code { font-size: 11pt; font-weight: normal}
 .fund-label { vertical-align: top; white-space: pre-line; font-weight: bold; font-size: 10pt; }
 .hours-type { vertical-align: top; font-weight: bold; white-space: nowrap; }
 .number { white-space: nowrap; text-align: right; vertical-align: bottom; font-weight: bold; font-variant-numeric: tabular-nums; }
