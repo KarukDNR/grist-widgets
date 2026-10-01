@@ -65,7 +65,7 @@
     report.innerHTML = `${demo ? '<p class="demo-note">DEMO — fictional data, not for payroll</p>' : ''}
       <header class="banner"><h1>Karuk Tribe</h1></header>
       <section class="metadata" aria-label="Employee and pay period">
-        <b>Name:</b><span class="value wide">${esc(staff.Name)}</span>
+        <b>Name:</b><span class="value name">${esc(staff.Name)}</span><span class="name-space" aria-hidden="true"></span>
         <b>Program:</b><span class="value">${esc(staff.Program || cfg.program)}</span><b>PP Ends:</b><span class="value">${formatDate(end)}</span>
         <b>Position:</b><span class="value">${esc(staff.Title)}</span><b>PP Date:</b><span class="value">${formatDate(date(period[cfg.payDateColumn]))}</span>
       </section>
@@ -119,7 +119,7 @@
   printButton.addEventListener('click', async () => {
     if (printButton.disabled) return;
     await document.fonts.ready;
-    await Promise.all(Array.from(report.images).map(img => img.decode().catch(() => {})));
+    await Promise.all(Array.from(report.querySelectorAll('img')).map(img => img.decode().catch(() => {})));
     window.print();
   });
   document.querySelector('#refresh').addEventListener('click', () => demo ? renderDemo() : refresh());
