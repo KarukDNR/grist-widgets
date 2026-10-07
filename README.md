@@ -3,6 +3,7 @@
 Custom widgets hosted with GitHub Pages from the repository root. Each widget lives in its own directory and needs no build step.
 
 - [Timesheet](timesheet/README.md): printable Karuk Tribe timesheet from Grist paid-hours data.
+- [Create timesheet](create-timesheet/README.md): create an employee/pay-period timesheet on demand, with a duplicate check.
 
 Widget URL after merging and Pages deployment: `https://karukdnr.github.io/grist-widgets/timesheet/`.
 
