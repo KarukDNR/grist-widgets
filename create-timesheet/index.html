@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create timesheet</title>
+  <title>Load timesheet</title>
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
   <style>
     body { margin: 0; padding: 12px; font: 14px system-ui, sans-serif; color: #202124; background: white; }
@@ -21,7 +21,7 @@
   <div class="controls">
     <label>Employee<select id="employee" disabled></select></label>
     <label>Pay period<select id="period" disabled></select></label>
-    <button id="create" disabled>＋ Create timesheet</button>
+    <button id="create" disabled>Load timesheet</button>
     <button id="refresh" disabled>Refresh</button>
   </div>
   <p id="status" role="status" aria-live="polite">Waiting for Grist…</p>

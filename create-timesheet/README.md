@@ -1,66 +1,105 @@
-# Create timesheet
+# Load timesheet
 
-Creates a Timesheets parent row on demand for a selected employee and pay period.
-Employee selection is independent of the existing Timesheets list, so users can
-create their first timesheet even when that list is empty.
+Select an employee and pay period, then click **Load timesheet**. The widget
+checks fresh Timesheets data, creates the parent if needed, and selects it.
+Its message distinguishes a new timesheet from an existing one. It replaces
+the native Timesheets selector; no existing row is needed to get started.
 
-The pay-period selector defaults to the unique period whose Start_date/End_date
-include today, using America/Los_Angeles. Other periods remain available for
-late entry. Missing or overlapping current periods require an explicit choice.
-The button checks fresh Timesheets data before writing and reports an existing
-timesheet instead of adding another. It writes only Who and Pay_period_end to a
-new parent row; it never changes paid hours.
+The employee defaults to the unique active Staff.Name matching the signed-in
+user.Name. Staff whose Status is retired are excluded (ignoring case and outer
+spaces), including from the default match. Other active employees remain
+available for manual selection. The pay period defaults to the unique period
+whose Start_date/End_date include today in America/Los_Angeles. Historical
+periods remain available. Missing or overlapping current periods require a choice.
 
-## Install with GitHub Pages
+## Signed-in employee setup
+
+Grist exposes user.Name to trigger formulas, not directly to custom-widget
+JavaScript. Add this small helper table once:
+
+1. Create a table with table ID **Widget_user**.
+2. Add a **Text** data column with column ID **Name**.
+3. Set Name's **trigger formula** to `user.Name`, applying **only to new records**.
+   This must be a trigger on a data column, not a regular formula column.
+4. Allow widget users to create/read/delete helper records and read the Name
+   trigger result.
+
+The widget adds an empty helper row, reads the name Grist supplies, and removes
+that specific row in a finally block. It never creates a temporary Timesheets
+record to identify the employee. A failed cleanup reports the helper row ID;
+that leftover row can be deleted manually. Names must match Staff.Name exactly.
+No match, duplicate active names, or missing helper permissions leave employee
+selection manual and show a message. Identity is kept only in this iframe's
+memory, never in shared widget options.
+
+## Install and replace the native selector
 
 1. Merge and deploy this repository from main/root.
-2. Add a Custom widget to the timesheet entry page, using the **Timesheets** data table without grouping.
+2. Add a Custom widget to the timesheet page, using **Timesheets** as its data
+   table, without grouping or filters. Name it **Load timesheet**.
 3. Set its URL to `https://karukdnr.github.io/grist-widgets/create-timesheet/`.
-4. No Select By setting or column mappings are required: the widget has its own employee and period selectors.
-5. Grant **Full document access**. The user must also have permission to read Staff/Pay_periods/Timesheets and create Timesheets records.
-6. Resize it to a short panel above the Timesheets list.
+   The existing URL is retained so installed copies update.
+4. Grant **Full document access**. The user also needs permission to read
+   Staff/Pay_periods/Timesheets and create Timesheets records.
+5. Leave this widget's **Select By** empty; it has its own selectors.
+6. Change the **Hours_paid** table's **Select By** to
+   **Load timesheet → Timesheets**, using its editable Timesheets reference.
+   New paid-hours rows inherit that selected parent; Who and Pay_period_end
+   can remain formulas derived from it.
+7. Set the print widget (also using Timesheets) to **Select By → Load timesheet**.
+   Repoint other linked summaries to this source using their Timesheets
+   reference/grouping field where applicable.
+8. Remove the old native Timesheets selector after checking the new links, and
+   resize Load timesheet to a short panel.
 
-Choose an employee, confirm the period, then click Create timesheet.
-Select the resulting row in the native Timesheets list to populate Hours_paid.
-Keep that list sorted by pay-period end descending. Its filters must include
-the chosen period; a historical period may be hidden by your recent-period filter.
-The button does not navigate another widget's cursor or override its filters.
+Click Load timesheet after choosing employee/period. Changing a choice clears
+the linked row selection until the next load, so paid-hours tables are not
+left showing the previous selection. Loading selects the row through both
+Grist's selected-row filter and cursor APIs: detail tables receive the parent
+reference and same-table links receive the selected record.
 
-Use Refresh after changing staff or pay-period data. Employee choice in the button is explicit. For native Timesheets row entry,
-Who can use the creation-only trigger formula `Staff.lookupOne(Name=user.Name)`.
-This matches the signed-in user's name exactly. The custom-widget API does not
-directly expose that trigger-formula user object, so this widget retains an
-employee selector to check duplicates before creating a row. An explicitly
-supplied Who value should be preserved by any default trigger you configure
-(for example, `value or Staff.lookupOne(Name=user.Name)`).
+Do not put the old last-two-weeks filter on this selector or linked print
+widget: it would hide historical timesheets selected here. Refresh updates
+the employee and pay-period lists and clears the loaded selection. It preserves
+valid manual choices; retired employees disappear on refresh. Status is checked
+again on each Load click.
 
 ## Custom Widget Builder alternative
 
-The same code can be kept in the document through Custom Widget Builder:
+1. Use Timesheets as the data table and grant Full document access.
+2. Paste index.html into the HTML tab, removing its config.js and widget.js
+   script tags at the bottom. Keep the plugin API script and inline style.
+3. Paste config.js followed by widget.js into the JavaScript tab.
+4. Click Preview, save, and configure the same outgoing Select By links.
 
-1. Use Timesheets as its data table and grant Full document access.
-2. Paste index.html into the HTML tab, **removing its config.js and widget.js script tags** at the bottom. Keep the Grist plugin API script and the inline style.
-3. Paste the contents of config.js followed by widget.js into the JavaScript tab.
-4. Click Preview and save the widget configuration.
-
-The hosted version is easier to update through PRs; Builder copies must be
-updated manually when the repository code changes.
+Builder copies must be updated manually when repository code changes.
 
 ## Configuration and limitations
 
-config.js contains actual table/column IDs and the timezone. Defaults:
-Staff.Name; Pay_periods.Start_date/End_date; Timesheets.Who/Pay_period_end.
+config.js contains table/column IDs and timezone. Defaults:
+Staff.Name/Status; Pay_periods.Start_date/End_date;
+Timesheets.Who/Pay_period_end; Widget_user.Name.
 
-Reference fields are written as row IDs. Grist's trigger formulas, access rules,
-and other document behavior still apply to creation. No document ID, credentials,
-or payroll data are stored in this repository.
+The button writes only Who and Pay_period_end on a new Timesheets row.
+It never changes paid hours. Native Timesheets entry may still use the Who
+creation-only trigger `value or Staff.lookupOne(Name=user.Name)` to preserve
+the employee explicitly supplied by this widget.
 
-The duplicate check prevents ordinary repeat clicks, but it is **not an atomic
-uniqueness constraint**: two users can check at the same time and both create a row.
-Use a Grist duplicate-prevention access rule if concurrent creation must be enforced.
+Reference fields are row IDs. Grist's triggers and access rules still apply.
+Retired staff filtering improves the interface; use access rules to restrict
+which employees a user may edit if that is required.
+
+The duplicate check prevents repeat clicks but is not an atomic uniqueness
+constraint: simultaneous users may both create a row. Ambiguous existing
+duplicates are reported without selecting one. A selection failure after
+creation explicitly reports that the row was created; clicking Load again
+finds that existing row.
+
+No document IDs, credentials, or payroll data are stored in this repository.
 
 ## Validation
 
 Run `node create-timesheet/tests/create.mjs` from the repository root.
-Tests mock the Grist API; live iframe permissions and native list filters require
-verification in the document.
+Tests mock identity triggers, helper cleanup, retirement filtering, timezone,
+creation/reuse, linked selection, duplicate detection, and API errors.
+Live iframe access rules and Select By wiring must be checked in the document.
