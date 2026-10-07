@@ -152,7 +152,7 @@
     report.innerHTML = `${demo ? '<p class="demo-note">DEMO — fictional data, not for payroll</p>' : ''}
       <header class="banner"><h1>Karuk Tribe</h1></header>
       <section class="metadata" aria-label="Employee and pay period">
-        <b>Name:</b><span class="value name">${esc(staff.Name)}</span><span class="name-space" aria-hidden="true"></span>
+        <b>Name:</b><span class="value name">${esc(staff.Legal_name)}</span><span class="name-space" aria-hidden="true"></span>
         <b>Program:</b><span class="value">${esc(staff.Program || cfg.program)}</span><b>PP Ends:</b><span class="value">${formatDate(end)}</span>
         <b>Position:</b><span class="value">${esc(staff.Title)}</span><b>PP Date:</b><span class="value">${formatDate(date(period[cfg.payDateColumn]))}</span>
       </section>
