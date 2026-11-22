@@ -20,7 +20,8 @@ The built-in button calls `window.print()` inside the widget. If a browser or Gr
 | Selected `Timesheets` record | `id`, `Who` (Reference to Staff), `Pay_period_end` (Reference to Pay_periods) |
 | `Hours_paid` | `Timesheets` (stored Reference to Timesheets), `Fund`, `Hours_type`, `Sun1` through `Sat2`, `Total_hours` |
 | Paid-hours summary configured in `tables.totals` | `Timesheets` reference or `group`, 14 daily totals, `Total` |
-| `Staff` | `Name`, `Title`; optional `Program` |
+| `Staff` | `Name`, `Title`; optional `Program` (Reference to Programs) |
+| `Programs` | `Name` (read when the selected staff member has a Program) |
 | `Funds` | `Name`, `Code` |
 | `Pay_periods` | `Start_date`, `End_date`; optional `Pay_date` |
 
@@ -36,7 +37,7 @@ All matching paid-hour rows are shown in source row order, including zero-hour r
 
 - **Letterhead:** add `assets/letterhead.png`; see `assets/README.md`. Until available, the heading is plain text.
 - **PP Date:** add `Pay_date` (Date) to `Pay_periods`, or update `payDateColumn` to the correct field ID. It is blank by default; it is not guessed from PP Ends.
-- **Program:** defaults to `DNR` in `config.js`; an optional `Staff.Program` overrides it.
+- **Program:** `Staff.Program` references `Programs`; the widget displays the linked `Programs.Name`. If `Staff.Program` is blank, it uses `DNR` from `config.js`. Set `tables.programs` to the actual Programs table ID if it differs.
 - **Holidays:** create `Holidays` with a `Date` field and set `tables.holidays` to `'Holidays'`. Alternatively set `holidayDates` to ISO date strings. Holiday shading overrides weekend gray. No holidays are assumed in live data.
 
 ## Preview and verification

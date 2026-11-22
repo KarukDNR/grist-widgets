@@ -4,12 +4,13 @@ window.TIMESHEET_CONFIG = {
     hours: 'Hours_paid',
     totals: 'Hours_paid_summary_Timesheets',
     staff: 'Staff',
+    programs: 'Programs',
     funds: 'Funds',
     periods: 'Pay_periods',
     holidays: 'Holidays' // Date column supplies the observed holiday dates.
   },
   timesheetColumn: 'Timesheets', // Stored Reference to Timesheets on Hours_paid (column ID).
-  program: 'DNR', // Staff.Program takes precedence if added.
+  program: 'DNR', // Used when Staff.Program is blank.
   payDateColumn: 'Pay_date', // Optional Date column on Pay_periods; blank until added.
   banner: 'assets/letterhead.png', // Optional; falls back to plain Karuk Tribe text.
   minimumRows: 11,

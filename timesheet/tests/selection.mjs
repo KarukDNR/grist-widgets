@@ -13,7 +13,8 @@ const tables = {
   // No Who or Pay_period_end on paid rows: the stored reference is authoritative.
   Hours_paid: {id:[10,11], Timesheets:[['R','Timesheets',7],8], Fund:[4,4], Hours_type:['Holiday','Regular'], Total_hours:[8,99], ...daily([8,99])},
   Hours_paid_summary_Who_and_pay_period: {id:[50], group:[['L',10]], Total:[12], ...daily([12])},
-  Staff: {id:[1], Name:['Person'], Title:['Specialist']},
+  Staff: {id:[1], Name:['Person'], Title:['Specialist'], Program:[1]},
+  Programs: {id:[1], Name:['Natural Resources']},
   Funds: {id:[4], Name:['Test Fund'], Code:['123']},
   Pay_periods: {id:[3], Start_date:['2026-09-20'], End_date:['2026-10-03']},
   Holidays: {id:[], Date:[]}
@@ -35,6 +36,7 @@ context.window = context;
 context.print = () => printed++;
 vm.runInContext(fs.readFileSync(new URL('../config.js', import.meta.url),'utf8'),context);
 context.TIMESHEET_CONFIG.banner = null;
+context.TIMESHEET_CONFIG.tables.totals = 'Hours_paid_summary_Who_and_pay_period';
 vm.runInContext(fs.readFileSync(new URL('../timesheet.js', import.meta.url),'utf8'),context);
 const settle = async () => {for (let i=0;i<5;i++) await new Promise(resolve=>setImmediate(resolve));};
 const refresh = async () => {elements['#refresh'].click(); await settle();};
@@ -47,6 +49,14 @@ assert.match(elements['#report'].innerHTML,/Holiday/);
 assert.doesNotMatch(elements['#report'].innerHTML,/Regular/);
 assert.match(elements['#report'].innerHTML,/12.00/,'Use authoritative Grist total, not sum of detail rows');
 assert.match(elements['#report'].innerHTML,/10-03-26/);
+assert.match(elements['#report'].innerHTML,/<b>Program:<\/b><span class="value">Natural Resources<\/span>/);
+tables.Staff.Program[0]=['R','Programs',1];
+await refresh(); visible();
+assert.match(elements['#report'].innerHTML,/<b>Program:<\/b><span class="value">Natural Resources<\/span>/);
+tables.Staff.Program[0]=null;
+await refresh(); visible();
+assert.match(elements['#report'].innerHTML,/<b>Program:<\/b><span class="value">DNR<\/span>/);
+tables.Staff.Program[0]=1;
 elements['#report'].querySelectorAll = () => [{decode:async()=>{}}];
 await elements['#print'].click();
 assert.equal(printed,1);
@@ -84,4 +94,4 @@ handlers.record(null); await settle();
 assert.equal(elements['#report'].hidden,true);
 handlers.record({id:7,Who:0,Pay_period_end:3}); await settle();
 assert.match(elements['#status'].textContent,/Select a Timesheets row/);
-console.log('PASS: timesheet-reference selection, leave-only rows, encoded refs, authoritative summaries, alternate column ID, print, and invalid/empty selection.');
+console.log('PASS: timesheet-reference selection, program names and fallback, leave-only rows, encoded refs, authoritative summaries, alternate column ID, print, and invalid/empty selection.');

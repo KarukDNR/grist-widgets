@@ -114,7 +114,7 @@
   // Destructuring below gives each property a local name. This function turns
   // those values into HTML; CSS handles their visual layout.
   function render(model) {
-    const {staff, period, paid, funds, totals, holidays} = model;
+    const {staff, program = cfg.program, period, paid, funds, totals, holidays} = model;
     const end = date(period.End_date);
     if (!end) throw new Error('The selected pay period has no End_date.');
     const start = date(period.Start_date);
@@ -153,7 +153,7 @@
       <header class="banner"><h1>Karuk Tribe</h1></header>
       <section class="metadata" aria-label="Employee and pay period">
         <b>Name:</b><span class="value name">${esc(staff.Legal_name)}</span><span class="name-space" aria-hidden="true"></span>
-        <b>Program:</b><span class="value">${esc(staff.Program || cfg.program)}</span><b>PP Ends:</b><span class="value">${formatDate(end)}</span>
+        <b>Program:</b><span class="value">${esc(program)}</span><b>PP Ends:</b><span class="value">${formatDate(end)}</span>
         <b>Position:</b><span class="value">${esc(staff.Title)}</span><b>PP Date:</b><span class="value">${formatDate(date(period[cfg.payDateColumn]))}</span>
       </section>
       <table aria-label="Hours by fund and status">${columns}${header()}<tbody>${paid.map(line).join('')}${Array.from({length:pad}, () => line(null)).join('')}</tbody></table>
@@ -213,6 +213,15 @@
       const staff = rows(tables.staff).find(r => r.id === who);
       const period = rows(tables.periods).find(r => r.id === periodId);
       if (!staff || !period) throw new Error('Employee or pay period is missing or inaccessible.');
+      let program = cfg.program;
+      if (staff.Program) {
+        const programsTable = await grist.docApi.fetchTable(cfg.tables.programs);
+        if (version !== generation) return;
+        requireColumns(programsTable, ['Name'], cfg.tables.programs);
+        const linkedProgram = rows(programsTable).find(r => r.id === ref(staff.Program));
+        if (!linkedProgram) throw new Error(`Program record ${ref(staff.Program)} is missing or inaccessible.`);
+        program = linkedProgram.Name;
+      }
       // Set combines configured ISO holiday dates with the optional Holidays table,
       // automatically removing duplicates.
       const holidays = new Set(cfg.holidayDates);
@@ -220,7 +229,7 @@
         requireColumns(tables.holidays, ['Date'], cfg.tables.holidays);
         rows(tables.holidays).forEach(row => { const d = date(row.Date); if (d) holidays.add(iso(d)); });
       }
-      render({staff,period,paid,funds:rows(tables.funds),totals:totalsFor(tables.totals,paid,timesheetId,who,periodId),holidays});
+      render({staff,program,period,paid,funds:rows(tables.funds),totals:totalsFor(tables.totals,paid,timesheetId,who,periodId),holidays});
     } catch (error) { if (version === generation) clear(error.message); }
   }
   // Register a click callback; registration does not run it yet. Before opening
