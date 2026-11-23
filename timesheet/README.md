@@ -33,6 +33,8 @@ In Grist, keep `Hours_paid.Timesheets` as a data Reference, and derive `Who` and
 
 All matching paid-hour rows are shown in source row order, including zero-hour rows. Blank numeric cells display empty; zeros in detail rows display empty, while total zeros display `0`. Errors in required numeric values block printing. The form expects a 14-day Sunday–Saturday period. It pads to eleven fund/status rows, matching the example, and permits longer reports to span pages rather than silently dropping rows.
 
+The grant column shows the fund name and code. For hours types other than Regular, it prefixes the name with the type in uppercase; Regular is omitted.
+
 ## Optional fields and assets
 
 - **Letterhead:** add `assets/letterhead.png`; see `assets/README.md`. Until available, the heading is plain text.
