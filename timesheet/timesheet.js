@@ -137,7 +137,7 @@
     // Each daily amount and row total is read as stored/calculated in Grist.
     const line = row => {
       const fund = row ? funds.find(f => f.id === ref(row.Fund)) : null;
-      if (row && !fund) throw new Error(`Fund record ${ref(row.Fund)} is missing or inaccessible.`);
+      // if (row && !fund) throw new Error(`Fund record ${ref(row.Fund)} is missing or inaccessible.`);
       const type = String(row?.Hours_type ?? '').trim();
       const prefix = type && type.toLowerCase() !== 'regular' ? `<span class="hours-type">${esc(type.toUpperCase())}</span> ` : '';
       return `<tr class="line"><td class="fund-label">${row ? prefix + esc(fund.Name) + '<br><span class="fund-code">' + esc(fund.Code) + '</span>' : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : ''}</td></tr>`;
