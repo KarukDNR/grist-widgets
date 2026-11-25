@@ -132,15 +132,15 @@
     // when the month changes. columns defines the table's shared column widths.
     const header = (withDates = true) => `<thead><tr><th class="heading-label">Day:</th>${labels.map((label,i) => `<th class="${classes[i]}" scope="col">${label}</th>`).join('')}<th ${withDates ? 'rowspan="2"' : ''}>${withDates ? 'Sub-<br>total' : 'Total'}</th></tr>${withDates ? `<tr><th class="heading-label">Date:</th>${dates.map((d,i) => `<th class="date-cell ${classes[i]}">${i === 0 || d.getUTCDate() === 1 ? `${d.getUTCMonth()+1}/` : ''}${d.getUTCDate()}</th>`).join('')}</tr>` : ''}</thead>`;
     const columns = `<colgroup><col class="fund">${days.map(() => '<col class="day">').join('')}<col class="subtotal"></colgroup>`;
-    // One Hours_paid record becomes one detail row. row.Fund is a Reference ID,
-    // so find() retrieves its name/code from Funds. line(null) makes a blank row.
+    // One Hours_paid record becomes one detail row. Look up its fund name and
+    // code when available. line(null) makes a blank row.
     // Each daily amount and row total is read as stored/calculated in Grist.
     const line = row => {
       const fund = row ? funds.find(f => f.id === ref(row.Fund)) : null;
-      // if (row && !fund) throw new Error(`Fund record ${ref(row.Fund)} is missing or inaccessible.`);
+      const fundLabel = fund ? `${esc(fund.Name)}<br><span class="fund-code">${esc(fund.Code)}</span>` : '';
       const type = String(row?.Hours_type ?? '').trim();
       const prefix = type && type.toLowerCase() !== 'regular' ? `<span class="hours-type">${esc(type.toUpperCase())}</span> ` : '';
-      return `<tr class="line"><td class="fund-label">${row ? prefix + esc(fund.Name) + '<br><span class="fund-code">' + esc(fund.Code) + '</span>' : ''}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : ''}</td></tr>`;
+      return `<tr class="line"><td class="fund-label">${prefix + fundLabel}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : ''}</td></tr>`;
     };
     // Add blank rows up to minimumRows; never truncate a longer timesheet.
     const pad = Math.max(0, cfg.minimumRows - paid.length);
