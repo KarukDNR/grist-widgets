@@ -104,7 +104,7 @@
         const group = ids(row.group);
         return group.length === paidIds.size && group.length > 0 && group.every(id => paidIds.has(id));
       }
-      return 'Who' in row && 'Pay_period_end' in row && ref(row.Who) === who && ref(row.Pay_period_end) === period;
+      return 'Who' in row && 'Pay_period' in row && ref(row.Who) === who && ref(row.Pay_period) === period;
     });
     // Missing or ambiguous summaries block printing instead of guessing a total.
     if (matches.length !== 1) throw new Error('Could not identify one paid-hours summary for this timesheet. Group by the timesheet reference or include group, and check tables.totals in config.js.');
@@ -190,11 +190,11 @@
     // a newer load increments generation; the older response is then ignored.
     const version = ++generation;
     clear('Loading timesheet…');
-    if (!selected || !selected.id || !ref(selected.Who) || !ref(selected.Pay_period_end)) { clear('Select a Timesheets row with an employee and pay period.'); return; }
+    if (!selected || !selected.id || !ref(selected.Who) || !ref(selected.Pay_period)) { clear('Select a Timesheets row with an employee and pay period.'); return; }
     if (!ready) { clear('Grant Full document access in the custom widget settings, then click Refresh.'); return; }
     // The selected record must come from the Timesheets table itself.
-    // Its id identifies the parent; Who and Pay_period_end identify metadata rows.
-    const timesheetId = selected.id, who = ref(selected.Who), periodId = ref(selected.Pay_period_end);
+    // Its id identifies the parent; Who and Pay_period identify metadata rows.
+    const timesheetId = selected.id, who = ref(selected.Who), periodId = ref(selected.Pay_period);
     // try/catch handles rejected API requests and our own validation errors.
     try {
       // Read the independent tables concurrently. Promise.all waits for all reads;

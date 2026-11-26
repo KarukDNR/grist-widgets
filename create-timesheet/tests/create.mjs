@@ -18,7 +18,7 @@ function fixture({name='Judson Fisher', missingHelper=false, cleanupError=false,
     Staff: {id:[1,2,3],Name:['Judson Fisher',duplicateName?'Judson Fisher':'Other Employee','Retired Employee'],
       Status:['active','active','retired']},
     Pay_periods: {id:[48,47],Start_date:['2026-09-20','2026-09-06'],End_date:['2026-10-03','2026-09-19']},
-    Timesheets: {id:[],Who:[],Pay_period_end:[]},
+    Timesheets: {id:[],Who:[],Pay_period:[]},
     Widget_user: {id:[],Name:[]}
   };
   const state={writes:0,helpers:0,removals:0,failWrite:false,failSelect:false,gate:null,selected:null,cursor:null};
@@ -60,10 +60,10 @@ function fixture({name='Judson Fisher', missingHelper=false, cleanupError=false,
           }
           if(state.failWrite)throw new Error('Access denied');
           assert.equal(kind,'AddRecord');assert.equal(table,'Timesheets');assert.equal(id,null);
-          assert.deepEqual(Object.keys(fields).sort(),['Pay_period_end','Who']);
+          assert.deepEqual(Object.keys(fields).sort(),['Pay_period','Who']);
           const next=++state.writes;
           tables.Timesheets.id.push(next);tables.Timesheets.Who.push(fields.Who);
-          tables.Timesheets.Pay_period_end.push(fields.Pay_period_end);
+          tables.Timesheets.Pay_period.push(fields.Pay_period);
           return {retValues:[next]};
         }
       }
@@ -84,20 +84,20 @@ assert.equal(s.helpers,1);assert.equal(s.removals,1);assert.equal(t.Widget_user.
 assert.ok(!e['#employee'].choices.some(o=>o.value==='3'));
 assert.deepEqual(s.selected,[]);
 await e['#create'].click();
-assert.equal(s.writes,1);assert.equal(t.Timesheets.Who[0],1);assert.equal(t.Timesheets.Pay_period_end[0],48);
+assert.equal(s.writes,1);assert.equal(t.Timesheets.Who[0],1);assert.equal(t.Timesheets.Pay_period[0],48);
 assert.deepEqual(s.selected,[1]);assert.equal(s.cursor,1);
 assert.match(e['#status'].textContent,/New timesheet created and selected/);
 await e['#create'].click();
 assert.equal(s.writes,1);assert.match(e['#status'].textContent,/Existing timesheet selected/);
-t.Timesheets.Who[0]=['R','Staff',1];t.Timesheets.Pay_period_end[0]=['R','Pay_periods',48];
+t.Timesheets.Who[0]=['R','Staff',1];t.Timesheets.Pay_period[0]=['R','Pay_periods',48];
 await e['#create'].click();assert.equal(s.writes,1);assert.equal(s.cursor,1);
-t.Timesheets.id.push(99);t.Timesheets.Who.push(1);t.Timesheets.Pay_period_end.push(48);
+t.Timesheets.id.push(99);t.Timesheets.Who.push(1);t.Timesheets.Pay_period.push(48);
 await e['#create'].click();assert.match(e['#status'].textContent,/Multiple timesheets/);assert.equal(s.writes,1);
 e['#period'].value='47';await e['#period'].change();assert.deepEqual(s.selected,[]);
 let release;s.gate=new Promise(resolve=>release=resolve);
 const first=e['#create'].click();assert.equal(e['#create'].disabled,true);
 await e['#create'].click();release();await first;s.gate=null;
-assert.equal(s.writes,2);assert.equal(t.Timesheets.Pay_period_end.at(-1),47);assert.equal(s.cursor,2);
+assert.equal(s.writes,2);assert.equal(t.Timesheets.Pay_period.at(-1),47);assert.equal(s.cursor,2);
 e['#employee'].value='2';await e['#employee'].change();s.failWrite=true;
 await e['#create'].click();assert.match(e['#status'].textContent,/Access denied/);assert.equal(s.writes,2);
 s.failWrite=false;s.failSelect=true;

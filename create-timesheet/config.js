@@ -12,7 +12,7 @@ window.CREATE_TIMESHEET_CONFIG = {
   // start/end belong to Pay_periods (Date columns).
   // who/period belong to Timesheets and must be references to Staff/Pay_periods.
   // The widget compares/writes reference row IDs, not their display text.
-  columns: {staffName: 'Name', staffStatus: 'Status', userName: 'Name', start: 'Start_date', end: 'End_date', who: 'Who', period: 'Pay_period_end'},
+  columns: {staffName: 'Name', staffStatus: 'Status', userName: 'Name', start: 'Start_date', end: 'End_date', who: 'Who', period: 'Pay_period'},
   // Determines today's calendar date, independent of the viewer's computer.
   // Used for the inclusive Start_date <= today <= End_date default.
   timezone: 'America/Los_Angeles'

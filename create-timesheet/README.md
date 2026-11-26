@@ -44,7 +44,7 @@ memory, never in shared widget options.
 5. Leave this widget's **Select By** empty; it has its own selectors.
 6. Change the **Hours_paid** table's **Select By** to
    **Load timesheet → Timesheets**, using its editable Timesheets reference.
-   New paid-hours rows inherit that selected parent; Who and Pay_period_end
+   New paid-hours rows inherit that selected parent; Who and Pay_period
    can remain formulas derived from it.
 7. Set the print widget (also using Timesheets) to **Select By → Load timesheet**.
    Repoint other linked summaries to this source using their Timesheets
@@ -78,9 +78,9 @@ Builder copies must be updated manually when repository code changes.
 
 config.js contains table/column IDs and timezone. Defaults:
 Staff.Name/Status; Pay_periods.Start_date/End_date;
-Timesheets.Who/Pay_period_end; Widget_user.Name.
+Timesheets.Who/Pay_period; Widget_user.Name.
 
-The button writes only Who and Pay_period_end on a new Timesheets row.
+The button writes only Who and Pay_period on a new Timesheets row.
 It never changes paid hours. Native Timesheets entry may still use the Who
 creation-only trigger `value or Staff.lookupOne(Name=user.Name)` to preserve
 the employee explicitly supplied by this widget.

@@ -10,7 +10,7 @@ const elements = Object.fromEntries(['#report','#status','#print','#refresh'].ma
   addEventListener(type, fn) { this[type] = fn; }
 }]));
 const tables = {
-  // No Who or Pay_period_end on paid rows: the stored reference is authoritative.
+  // No Who or Pay_period on paid rows: the stored reference is authoritative.
   Hours_paid: {id:[10,11], Timesheets:[['R','Timesheets',7],8], Fund:[4,4], Hours_type:['Holiday','Regular'], Total_hours:[8,99], ...daily([8,99])},
   Hours_paid_summary_Who_and_pay_period: {id:[50], group:[['L',10]], Total:[12], ...daily([12])},
   Staff: {id:[1], Name:['Person'], Title:['Specialist'], Program:[1]},
@@ -42,7 +42,7 @@ const settle = async () => {for (let i=0;i<5;i++) await new Promise(resolve=>set
 const refresh = async () => {elements['#refresh'].click(); await settle();};
 const visible = () => assert.equal(elements['#report'].hidden,false,elements['#status'].textContent);
 handlers.options({}, {accessLevel:'full'});
-handlers.record({id:7,Who:['R','Staff',1],Pay_period_end:['R','Pay_periods',3]});
+handlers.record({id:7,Who:['R','Staff',1],Pay_period:['R','Pay_periods',3]});
 await settle();
 visible();
 assert.match(elements['#report'].innerHTML,/<td class="fund-label"><span class="hours-type">HOLIDAY<\/span> Test Fund<br>/);
@@ -84,7 +84,7 @@ await refresh();
 assert.equal(elements['#print'].disabled,true,'Duplicate summaries must block printing');
 summary.id.pop(); summary.Timesheets.pop(); summary.Total.pop();
 delete summary.Timesheets;
-summary.Who=[1]; summary.Pay_period_end=[3];
+summary.Who=[1]; summary.Pay_period=[3];
 await refresh(); visible();
 
 context.TIMESHEET_CONFIG.timesheetColumn='Timesheet';
@@ -96,11 +96,11 @@ await refresh();
 assert.equal(elements['#print'].disabled,true);
 assert.match(elements['#status'].textContent,/non-numeric/);
 tables.Hours_paid.Mon1[0]=8;
-handlers.record({id:9,Who:1,Pay_period_end:3});
+handlers.record({id:9,Who:1,Pay_period:3});
 await settle();
 assert.match(elements['#status'].textContent,/No paid-hour rows/);
 handlers.record(null); await settle();
 assert.equal(elements['#report'].hidden,true);
-handlers.record({id:7,Who:0,Pay_period_end:3}); await settle();
+handlers.record({id:7,Who:0,Pay_period:3}); await settle();
 assert.match(elements['#status'].textContent,/Select a Timesheets row/);
 console.log('PASS: timesheet-reference selection, combined grant/type column, program names and fallback, leave-only rows, encoded refs, authoritative summaries, alternate column ID, print, and invalid/empty selection.');
