@@ -3,19 +3,18 @@
  *
  * Reading order:
  *   1. The Grist event handlers at the bottom receive the selected Timesheets row.
- *   2. refresh() reads the configured tables and selects the matching paid hours.
- *   3. totalsFor() finds the corresponding summary calculated by Grist.
- *   4. render() builds the report's HTML; the Print button opens browser printing.
+ *   2. refresh() reads Hours_paid once and selects the IDs in Timesheet_lines.
+ *   3. render() formats Grist's prepared values; Print opens browser printing.
  *
  * This script reads the document only. Payroll calculations stay in Grist.
- * Table/column IDs and assets are configured in config.js. Font sizes, borders,
+ * The Hours_paid table name and assets are configured in config.js. Font sizes, borders,
  * column widths, and print margins are controlled by timesheet.css.
  *
  * JavaScript notation used below:
  *   const declares a binding that is not reassigned; let allows reassignment.
  *   value => expression is a short function (similar to a Python lambda).
  *   array.map(fn) transforms each item; filter(fn) keeps matching items;
- *   find(fn) returns the first match. join('') combines strings without separators.
+ *   join('') combines strings without separators.
  *   === compares without converting types; ! means "not".
  *   condition ? yes : no is an inline if/else expression.
  *   Backtick strings can contain HTML, newlines, and ${expressions}.
@@ -58,11 +57,10 @@
   // Object.entries() gives [columnName, values] pairs; fromEntries() builds objects.
   // ([key, values]) is "destructuring": assign names to the two items of each pair.
   const rows = table => (table.id || []).map((id, index) => Object.fromEntries(Object.entries(table).map(([key, values]) => [key, values[index]])));
-  // References can arrive as a numeric row ID or an encoded ['R', table, id].
-  // Normalize both forms to the ID. A Reference List may be ['L', id1, id2, ...];
-  // slice(1) removes that marker before normalizing each member.
+  // Grist may encode references as ['R', table, id] and lists as ['L', ...].
   const ref = value => Array.isArray(value) && value[0] === 'R' ? value[value.length - 1] : value;
-  const ids = value => Array.isArray(value) ? (value[0] === 'L' ? value.slice(1) : value).map(ref) : [];
+  const list = value => Array.isArray(value) ? (value[0] === 'L' ? value.slice(1) : value) : [];
+  const ids = value => list(value).map(ref);
   // Accept Grist's date encoding, Unix timestamps in seconds, or date strings.
   // JavaScript Date uses milliseconds, so numeric timestamps are multiplied by 1000.
   // A blank date becomes null; a malformed date stops rendering with a useful error.
@@ -88,36 +86,18 @@
   }
   // Check actual column IDs, not the visible labels a user may rename.
   function requireColumns(table, columns, name) {
-    for (const column of columns) if (!(column in table)) throw new Error(`${name} is missing column ${column}. Check config.js and the Grist table.`);
-  }
-  // Choose exactly one authoritative paid-hours summary for the selected timesheet.
-  // Matching priority: stored timesheet reference, exact source-row membership,
-  // then employee + period for older summaries lacking both of those fields.
-  // Set stores unique paid row IDs and supports fast membership checks.
-  // The summary's group field is the list of Hours_paid records it summarizes.
-  function totalsFor(table, paid, timesheetId, who, period) {
-    const all = rows(table);
-    const paidIds = new Set(paid.map(row => row.id));
-    const matches = all.filter(row => {
-      if (cfg.timesheetColumn in row) return ref(row[cfg.timesheetColumn]) === timesheetId;
-      if ('group' in row) {
-        const group = ids(row.group);
-        return group.length === paidIds.size && group.length > 0 && group.every(id => paidIds.has(id));
-      }
-      return 'Who' in row && 'Pay_period' in row && ref(row.Who) === who && ref(row.Pay_period) === period;
-    });
-    // Missing or ambiguous summaries block printing instead of guessing a total.
-    if (matches.length !== 1) throw new Error('Could not identify one paid-hours summary for this timesheet. Group by the timesheet reference or include group, and check tables.totals in config.js.');
-    return matches[0];
+    for (const column of columns) if (!(column in table)) throw new Error(`${name} is missing column ${column}. Check the Grist table and selected columns.`);
   }
   // model is an object containing the already-selected records and holiday set.
   // Destructuring below gives each property a local name. This function turns
   // those values into HTML; CSS handles their visual layout.
   function render(model) {
-    const {staff, program = cfg.program, period, paid, funds, totals, holidays} = model;
-    const end = date(period.End_date);
+    const {timesheet, paid, holidays} = model;
+    const totals = timesheet;
+    const program = timesheet.Who_Program || cfg.program;
+    const end = date(timesheet.Pay_period_End_date);
     if (!end) throw new Error('The selected pay period has no End_date.');
-    const start = date(period.Start_date);
+    const start = date(timesheet.Pay_period_Start_date);
     // The period end is inclusive: subtract 13 days to get the first of 14 days.
     // 86400000 is the number of milliseconds in a day. UTC weekday 6 is Saturday.
     const expected = new Date(end.getTime() - 13 * 86400000);
@@ -132,12 +112,10 @@
     // when the month changes. columns defines the table's shared column widths.
     const header = (withDates = true) => `<thead><tr><th class="heading-label">Day:</th>${labels.map((label,i) => `<th class="${classes[i]}" scope="col">${label}</th>`).join('')}<th ${withDates ? 'rowspan="2"' : ''}>${withDates ? 'Sub-<br>total' : 'Total'}</th></tr>${withDates ? `<tr><th class="heading-label">Date:</th>${dates.map((d,i) => `<th class="date-cell ${classes[i]}">${i === 0 || d.getUTCDate() === 1 ? `${d.getUTCMonth()+1}/` : ''}${d.getUTCDate()}</th>`).join('')}</tr>` : ''}</thead>`;
     const columns = `<colgroup><col class="fund">${days.map(() => '<col class="day">').join('')}<col class="subtotal"></colgroup>`;
-    // One Hours_paid record becomes one detail row. Look up its fund name and
-    // code when available. line(null) makes a blank row.
+    // One Hours_paid record becomes one detail row. line(null) makes a blank row.
     // Each daily amount and row total is read as stored/calculated in Grist.
     const line = row => {
-      const fund = row ? funds.find(f => f.id === ref(row.Fund)) : null;
-      const fundLabel = fund ? `${esc(fund.Name)}<br><span class="fund-code">${esc(fund.Code)}</span>` : '';
+      const fundLabel = row?.Fund_Name ? `${esc(row.Fund_Name)}<br><span class="fund-code">${esc(row.Fund_Code)}</span>` : '';
       const type = String(row?.Hours_type ?? '').trim();
       const prefix = type && type.toLowerCase() !== 'regular' ? `<span class="hours-type">${esc(type.toUpperCase())}</span> ` : '';
       return `<tr class="line"><td class="fund-label">${prefix + fundLabel}</td>${days.map((day,i) => `<td class="number ${classes[i]}">${row ? esc(hours(row[day])) : ''}</td>`).join('')}<td class="number">${row ? esc(hours(row.Total_hours, false)) : ''}</td></tr>`;
@@ -154,9 +132,9 @@
     report.innerHTML = `${demo ? '<p class="demo-note">DEMO — fictional data, not for payroll</p>' : ''}
       <header class="banner"><h1>Karuk Tribe</h1></header>
       <section class="metadata" aria-label="Employee and pay period">
-        <b>Name:</b><span class="value name">${esc(staff.Legal_name)}</span><span class="name-space" aria-hidden="true"></span>
+        <b>Name:</b><span class="value name">${esc(timesheet.Who_Legal_name)}</span><span class="name-space" aria-hidden="true"></span>
         <b>Program:</b><span class="value">${esc(program)}</span><b>PP Ends:</b><span class="value">${formatDate(end)}</span>
-        <b>Position:</b><span class="value">${esc(staff.Title)}</span><b>PP Date:</b><span class="value">${formatDate(date(period[cfg.payDateColumn]))}</span>
+        <b>Position:</b><span class="value">${esc(timesheet.Who_Title)}</span><b>PP Date:</b><span class="value">${formatDate(date(timesheet.Pay_period_Pay_date))}</span>
       </section>
       <table aria-label="Hours by fund and status">${columns}${header()}<tbody>${paid.map(line).join('')}${Array.from({length:pad}, () => line(null)).join('')}</tbody></table>
       <div class="total-line"><span>Total Hours*</span><strong>${esc(hours(totals.Total, false))}</strong></div>
@@ -179,7 +157,7 @@
     // Expose the completed report and enable printing only after validation.
     report.hidden = false;
     printButton.disabled = false;
-    status.textContent = `${staff.Name} · Period ending ${formatDate(end)}${demo ? ' · DEMO' : ''}`;
+    status.textContent = `${timesheet.Who_Legal_name} · Period ending ${formatDate(end)}${demo ? ' · DEMO' : ''}`;
   }
   // Hide stale/invalid output, disable printing, and show the explanation.
   function clear(message) { report.hidden = true; report.replaceChildren(); printButton.disabled = true; status.textContent = message; }
@@ -192,46 +170,19 @@
     clear('Loading timesheet…');
     if (!selected || !selected.id || !ref(selected.Who) || !ref(selected.Pay_period)) { clear('Select a Timesheets row with an employee and pay period.'); return; }
     if (!ready) { clear('Grant Full document access in the custom widget settings, then click Refresh.'); return; }
-    // The selected record must come from the Timesheets table itself.
-    // Its id identifies the parent; Who and Pay_period identify metadata rows.
-    const timesheetId = selected.id, who = ref(selected.Who), periodId = ref(selected.Pay_period);
     // try/catch handles rejected API requests and our own validation errors.
     try {
-      // Read the independent tables concurrently. Promise.all waits for all reads;
-      // key order connects each result to its name in the tables object.
-      // A nonexistent configured table ID causes an API error here.
-      const keys = ['hours','totals','staff','funds','periods'];
-      if (cfg.tables.holidays) keys.push('holidays');
-      const fetched = await Promise.all(keys.map(key => grist.docApi.fetchTable(cfg.tables[key])));
+      requireColumns(selected, ['Timesheet_lines','Who_Legal_name','Who_Title','Who_Program','Pay_period_Start_date','Pay_period_End_date','Pay_period_Pay_date','Holiday_Dates','Total',...days], 'Timesheets');
+      const lineIds = new Set(ids(selected.Timesheet_lines));
+      if (!lineIds.size) throw new Error('No paid-hour rows exist for the selected timesheet.');
+      const hoursTable = await grist.docApi.fetchTable(cfg.tables.hours);
       if (version !== generation) return;
-      const tables = Object.fromEntries(keys.map((key,i) => [key, fetched[i]]));
-      requireColumns(tables.hours, [cfg.timesheetColumn,'Fund','Hours_type','Total_hours',...days], cfg.tables.hours);
-      requireColumns(tables.totals, ['Total',...days], cfg.tables.totals);
-      // Select by the stored parent reference, not a concatenated text key.
-      // Thus a leave-only timesheet works without any task Hours records.
-      // Paid-table Who/period formulas are not needed for this selection.
-      const paid = rows(tables.hours).filter(r => ref(r[cfg.timesheetColumn]) === timesheetId);
-      if (!paid.length) throw new Error('No paid-hour rows exist for the selected timesheet.');
-      const staff = rows(tables.staff).find(r => r.id === who);
-      const period = rows(tables.periods).find(r => r.id === periodId);
-      if (!staff || !period) throw new Error('Employee or pay period is missing or inaccessible.');
-      let program = cfg.program;
-      if (staff.Program) {
-        const programsTable = await grist.docApi.fetchTable(cfg.tables.programs);
-        if (version !== generation) return;
-        requireColumns(programsTable, ['Name'], cfg.tables.programs);
-        const linkedProgram = rows(programsTable).find(r => r.id === ref(staff.Program));
-        if (!linkedProgram) throw new Error(`Program record ${ref(staff.Program)} is missing or inaccessible.`);
-        program = linkedProgram.Name;
-      }
-      // Set combines configured ISO holiday dates with the optional Holidays table,
-      // automatically removing duplicates.
-      const holidays = new Set(cfg.holidayDates);
-      if (tables.holidays) {
-        requireColumns(tables.holidays, ['Date'], cfg.tables.holidays);
-        rows(tables.holidays).forEach(row => { const d = date(row.Date); if (d) holidays.add(iso(d)); });
-      }
-      render({staff,program,period,paid,funds:rows(tables.funds),totals:totalsFor(tables.totals,paid,timesheetId,who,periodId),holidays});
+      requireColumns(hoursTable, ['Fund_Name','Fund_Code','Hours_type','Total_hours',...days], cfg.tables.hours);
+      const paid = rows(hoursTable).filter(row => lineIds.has(row.id));
+      if (paid.length !== lineIds.size) throw new Error('Some paid-hour rows in Timesheet_lines are missing or inaccessible.');
+      const holidayDates = [...cfg.holidayDates, ...list(selected.Holiday_Dates)];
+      const holidays = new Set(holidayDates.map(date).filter(Boolean).map(iso));
+      render({timesheet:selected,paid,holidays});
     } catch (error) { if (version === generation) clear(error.message); }
   }
   // Register a click callback; registration does not run it yet. Before opening
@@ -246,12 +197,12 @@
   });
   // Refresh rerenders fictional data in demo mode or reloads live Grist data.
   document.querySelector('#refresh').addEventListener('click', () => demo ? renderDemo() : refresh());
-  // Construct fictional records in the same shape as a live model. Only the demo
-  // assembles sample totals here; live totals always come from Grist's summary.
+  // Construct fictional records in the same shape as the Grist-prepared values.
   function renderDemo() {
     const workedDays = [[1,2],[3,4],[8,9],[10,12],[11],[5]];
-    const paid = Array.from({length:6}, (_,i) => ({id:i+1,Fund:i+1,Hours_type:i===5?'Holiday':'Regular',Total_hours:[16,16,16,16,8,8][i],...Object.fromEntries(days.map((d,j) => [d,workedDays[i].includes(j) ? 8 : 0]))}));
-    render({staff:{Name:'Example Employee',Title:'GIS Specialist'},period:{Start_date:'2026-09-20',End_date:'2026-10-03'},paid,funds:paid.map((r,i)=>({id:r.Fund,Name:`Example Fund ${i+1}`,Code:`0000-00-000${i+1}.00`})),totals:{Total:80,...Object.fromEntries(days.map((d,j)=>[d,[0,6,7,13].includes(j)?0:8]))},holidays:new Set(['2026-09-25'])});
+    const paid = Array.from({length:6}, (_,i) => ({id:i+1,Fund_Name:`Example Fund ${i+1}`,Fund_Code:`0000-00-000${i+1}.00`,Hours_type:i===5?'Holiday':'Regular',Total_hours:[16,16,16,16,8,8][i],...Object.fromEntries(days.map((d,j) => [d,workedDays[i].includes(j) ? 8 : 0]))}));
+    const timesheet = {Who_Legal_name:'Example Employee',Who_Title:'GIS Specialist',Who_Program:cfg.program,Pay_period_Start_date:'2026-09-20',Pay_period_End_date:'2026-10-03',Pay_period_Pay_date:null,Total:80,...Object.fromEntries(days.map((d,j)=>[d,[0,6,7,13].includes(j)?0:8]))};
+    render({timesheet,paid,holidays:new Set(['2026-09-25'])});
   }
   // Startup branches: standalone demo, missing Grist API, or live Grist connection.
   if (demo) { renderDemo(); return; }
@@ -259,11 +210,10 @@
   // Grist invokes these callbacks as events occur:
   // onOptions reports the granted access level; full access enables cross-table reads.
   // onRecord supplies the selected Timesheets row; save it and refresh.
-  // onRecords triggers another refresh when the widget's record set updates.
-  // keepEncoded/expandRefs:false preserve Reference IDs instead of display text.
+  // Include ordinary columns even when the widget section shows only a few.
+  // keepEncoded/expandRefs:false preserve Reference and Reference List IDs.
   // ready() requests access and announces that the widget is ready to receive events.
   grist.onOptions((options, interaction) => { ready = interaction?.accessLevel === 'full'; refresh(); });
-  grist.onRecord(record => { selected = record; refresh(); }, {keepEncoded:true, expandRefs:false});
-  grist.onRecords(() => refresh(), {keepEncoded:true, expandRefs:false});
+  grist.onRecord(record => { selected = record; refresh(); }, {keepEncoded:true, expandRefs:false, includeColumns:'normal'});
   grist.ready({requiredAccess:'full'});
 })();
